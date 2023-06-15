@@ -1,0 +1,31 @@
+# sshpass -p 'b1gdata' sftp -l 3200 -r hiseq_user@fastq.ucsf.edu:/SSD/220804_A01102_0457_BHYW55DMXX_S3_SE106/ . >> cat.download.log.txt 2>> cat.download.err.txt
+rsync --verbose --progress --update --size-only  /mnt/cat_data/PS_MO_Pool_1/* 220804_A01102_0457_BHYW55DMXX_S3_SE106/ --bwlimit=0.0625g  2>> cat.download.err.txt
+rsync --verbose --progress --bwlimit=0.1g /mnt/cat_data/ . 2>> cat.download.err.txt
+mkdir 00_combined_lane1_lane2
+
+uniq $(ls /home/patrick//@patrick/SF11949_SF11055_run/00_raw_data/220804_A01102_0457_BHYW55DMXX_S3_SE106/PS_MO_Pool_1)
+
+for ea in $(printf '%s\n' *.gz | sed -E 's/_S.*//' | uniq | sort); do
+    ea=$ea\_
+    printf "$ea\n"
+    printf "%s\n" $ea*
+    printf "\n\n\n"
+done
+
+diff <(tail -n +2 /home/patrick/@patrick/SF11949_SF11055_run/sample_sheet_for_cat.csv | cut -f1 -d ',' | sort) <(printf '%s\n' *.gz | sed -E 's/_S.*//' | uniq | sort)
+# 188d187
+# < SF11949_p10_127
+
+# TODO sample sheet creator has to check for uniqueness output warning
+
+for ea in $(printf '%s\n' *.gz | sed -E 's/_S.*//' | uniq | sort); do
+    eaN=$ea\_
+    printf "$eaN\n"
+    printf "%s\n" $eaN*
+    cat $eaN* > ../combo/$ea.fastq.gz
+    printf "\n\n\n"
+done
+
+grep -Ff <(head -n 10 ~/@patrick/SF10711/rna.seq/expression_matrices/topGenes_ordered.csv) gencode.v38.primary_assembly.annotation.gtf | sed 's/.*\(ENSG[0-9]*\.[0-9]\).*/\1 /' | uniq > top10Gene_all_transcripts.txt
+
+grep -ef top10Gene_all_transcripts.txt hg38_GENCODE.v38.bed > hg38_GENCODE.v38.1000.bed
