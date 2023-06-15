@@ -1,0 +1,151 @@
+My end goal is to host a snakemake workflow on a GitHub repo that can be accessed as a snakemake module. I'm testing locally before I host it, but I'm running into an issue. I cannot access the scripts in the snakemake module directory. It looks locally in the current snakemake directory for the scripts, which I obviously cannot move locally if my end goal is to host the module remotely.
+
+I don't see this problem when accessing Conda environments in the remote directory. Is there a way to mimic this behavior for a scripts directory? I would be open to an absolute path reference if it can be applied to access a remote script directory. Here's a dummy example reproducing the error:
+
+Snakemake version: 6.0.5
+
+Tree structure:
+
+.
+├── external_module
+│   ├── scripts
+│   │   ├── argparse
+│   │   └── print.py
+│   └── Snakefile
+└── Snakefile
+
+Local snakefile:
+
+module remote_module:
+    snakefile: "external_module/Snakefile"
+
+use rule * from remote_module
+
+use rule foo from remote_module with:
+    input:
+        "complete.txt"
+External Snakefile:
+
+rule foo:
+    input:
+        "complete.txt"
+
+rule bar:
+    output:
+        touch(temp("complete.txt"))
+    shell:
+        "scripts/print.py -i foo"
+print.py
+
+import argparse
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description='dummy snakemake function',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("-i", default=None,
+                        help="item to be printed")
+    
+    return parser
+
+def main():
+    args = get_parser().parse_args()
+    print(args.i)
+
+if __name__ == '__main__':
+    main()
+Snakemake pipeline execution
+
+(base) bobby@SongBird:~/remote_snakemake_test$ snakemake --cores 4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job counts:
+        count   jobs
+        1       bar
+        1       foo
+        2
+
+[Fri Mar 26 10:12:50 2021]
+rule bar:
+    output: complete.txt
+    jobid: 1
+
+/usr/bin/bash: scripts/print.py: No such file or directory
+[Fri Mar 26 10:12:50 2021]
+Error in rule bar:
+    jobid: 1
+    output: complete.txt
+    shell:
+        scripts/print.py -i foo
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/bobby/remote_snakemake_test/.snakemake/log/2021-03-26T101250.118440.snakemake.log
+Any insight would be very appreciated. Thanks!
+
+
+#############
+
+
+
+
+Modules are new to me, so this may not be the best way. The behavior seems slightly buggy, but this works for now...
+
+It looks like you can access the base directory of the workflow, ., with workflow.basedir and the external directory, external_module, with workflow.current_basedir within external_module/Snakefile. However, it seems like you can't use those functions in the rule while it is executed in a module. If you save it as a variable, you can use it later, but only if the variable is also defined in the main Snakefile.
+
+This works:
+
+# Snakefile
+module remote_module:
+    snakefile: "external_module/Snakefile"
+
+use rule * from remote_module
+
+my_basedir = "DOESN'T MATTER"
+use rule foo from remote_module with:
+    input:
+        "complete.txt"
+
+# external_module/Snakefile
+my_basedir = workflow.current_basedir
+
+rule foo:
+    input:
+        "complete.txt"
+
+rule bar:
+    output:
+        touch(temp("complete.txt"))
+    shell:
+        "{my_basedir}/scripts/print.py -i foo"
+
+my_basedir will have the value of the correct directory. But, if you remove the assignment of my_basedir in the top level Snakefile, the variable won't be available, though clearly the value itself isn't used. Seems like a bug that will get patched eventually, so it's probably safer to set it to workflow.basedir + '/external_module'.
+
+I'll also note that if you run the workflow in a different working directory the relative path to print.py will break in the original example. It may be safer, and more sane, to set that path as a config variable and set it correctly in your main Snakefile, like this:
+
+# Snakefile
+config['my_basedir'] = workflow.current_basedir + '/external_module'
+module remote_module:
+    snakefile: "external_module/Snakefile"
+
+use rule * from remote_module
+
+use rule foo from remote_module with:
+    input:
+        "complete.txt"
+
+# external_module/Snakefile
+rule foo:
+    input:
+        "complete.txt"
+
+rule bar:
+    output:
+        touch(temp("complete.txt"))
+    shell:
+        "{config[my_basedir]}/scripts/print.py -i foo"
+Thanks for the good toy example!<Paste>
