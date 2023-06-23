@@ -1,0 +1,2 @@
+start-dir: "05_sorted/{file_names}.bam"
+gtfFile: "/home/shared/hg_align_db/GRCh38_gencode_primary/gencode.v38.primary_assembly.annotation.ercc.phix.gtf"

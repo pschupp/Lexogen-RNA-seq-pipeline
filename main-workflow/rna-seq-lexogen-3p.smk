@@ -1,59 +1,51 @@
 threads = workflow.cores
 import os
-cwd = os.getcwd()
 import numpy
 import pandas
 import re
-sample=dirpath = '01_basecalled'
-sample=[f for f in os.listdir(dirpath) if os.path.isfile(os.path.join(dirpath, f))]
-sample=list(filter(lambda x:'.fastq' in x, sample))
-sample=[re.sub(".fastq.*", "", x) for x in sample]
-
+cwd = os.getcwd()
+sample=pandas.read_table('00_raw_seq_data/SampleSheet.csv', header=None, sep=',')
+sample=sample[0][(int(numpy.where(sample[0]=='Sample_ID')[0])+1):]
 rule all:
     input: 
         "09_multiqc/multiqc_report.html"
+            
+rule bcl_2_fastq:
+    output:"00_raw_seq_data/00_basecalling.log.txt"
+    shell:
+        """
+        /opt/illumina/bcl2fastq/bin/bcl2fastq --runfolder=00_raw_seq_data --output-dir=01_basecalled --sample-sheet=00_raw_seq_data/SampleSheet.csv --minimum-trimmed-read-length=30 --with-failed-reads --barcode-mismatches=1 --no-lane-splitting --loading-threads=5 --processing-threads=15 --writing-threads=5 2> 00_raw_seq_data/00_basecalling.log.txt;
+        mv 01_basecalled/sf*/*fastq.gz 01_basecalled;
+        mkdir 01_basecalled/Undetermined;
+        mv 01_basecalled/Undetermined*fastq.gz 01_basecalled/Undetermined;
+        rename 's/_S[0-9]+//' 01_basecalled/*fastq.gz
+        """
 
 rule umi_tools:
-    input:"01_basecalled/{file_names}.fastq.gz"
+    input:"00_raw_seq_data/00_basecalling.log.txt"
     output:"01_basecalled/{file_names}.umi.fastq.gz"
     log:"01_basecalled/{file_names}.log.txt"
     threads: 1
     shell:
         """
         umi_tools extract \\
-        --extract-method string \\
-        --bc-pattern NNNNNN \\
+        --extract-method=string \\
+        --bc-pattern=NNNNNN \\
         -L {log} \\
         --stdin {input} \\
         --stdout {output}
         """
 
-rule fastqc_pre:
-    input: "01_basecalled/{file_names}.umi.fastq.gz"
-    output: "02_pretrim_fastqc/{file_names}.pretrim.std_out.txt"
-    threads: 3
-    shell:
-        """
-        fastqc {input} \\
-        --outdir 02_pretrim_fastqc/ \\
-        --noextract \\
-        --threads {threads} \\
-        > {output} \\
-        2> 02_pretrim_fastqc/{wildcards.file_names}.pretrim.std_err.txt
-        """
-
 rule trimmomatic:
-    input:
-        real="01_basecalled/{file_names}.fastq.gz",
-        dummy="02_pretrim_fastqc/{file_names}.pretrim.std_out.txt"
-    output:"03_trimmed/{file_names}.trimmed.fastq"
+    input:"01_basecalled/{file_names}.umi.fastq.gz"
+    output:"02_trimmed/{file_names}.trimmed.fastq"
     params:
         headcrop=4,
         clipfile="/usr/share/trimmomatic/TruSeq3-SE.polyA.fa"
     threads: 1
     shell:
         """
-        TrimmomaticSE {input.real} {output} \\
+        TrimmomaticSE {input} {output} \\
         -trimlog {output}.trim_full_log.txt \\
         -threads {threads} \\
         ILLUMINACLIP:{params.clipfile}:2:30:7 \\
@@ -62,37 +54,37 @@ rule trimmomatic:
         SLIDINGWINDOW:4:15 \\
         MINLEN:30 \\
         HEADCROP:{params.headcrop} \\
-        > 03_trimmed/{wildcards.file_names}.std_out.txt \\
-        2> 03_trimmed/{wildcards.file_names}.std_err.txt
+        > 02_trimmed/{wildcards.file_names}.std_out.txt \\
+        2> 02_trimmed/{wildcards.file_names}.std_err.txt
         """
 
 rule fastqc_post:
-    input: "03_trimmed/{file_names}.trimmed.fastq"
-    output: "04_posttrim_fastqc/{file_names}.std_out.txt"
+    input: "02_trimmed/{file_names}.trimmed.fastq"
+    output: "03_posttrim_fastqc/{file_names}.std_out.txt"
     threads: 3
     shell:
         """
         fastqc {input} \\
-        --outdir 04_posttrim_fastqc/ \\
+        --outdir 03_posttrim_fastqc/ \\
         --noextract \\
         --threads {threads} \\
         > {output} \\
-        2> 04_posttrim_fastqc/{wildcards.file_names}.std_err.txt
+        2> 03_posttrim_fastqc/{wildcards.file_names}.std_err.txt
         """
 
 rule star_align:
     input: 
-        dummy="04_posttrim_fastqc/{file_names}.std_out.txt",
+        dummy="03_posttrim_fastqc/{file_names}.std_out.txt",
         files="03_trimmed/{file_names}.trimmed.fastq"
-    output: "05_aligned/{file_names}.Aligned.out.bam"
+    output: "04_aligned/{file_names}.Aligned.out.bam"
     threads: 15
     params:
-        genomeDir="/home/shared/hg_align_db/GRCh38_gencode_primary/star_index_ercc_phix"
+        genomeDir=config['genomeDir']
     shell:
         """
-        /opt/STAR_old/STAR-2.6.1e/bin/Linux_x86_64/STAR --genomeDir {params.genomeDir} \\
+        /opt/STAR_old/STAR-2.6.1e/bin/Linux_x86_64/STAR --genomeDir config['genomeDir'] \\
         --readFilesIn {input.files} --readFilesCommand cat \\
-        --outFileNamePrefix 05_aligned/{wildcards.file_names}. \\
+        --outFileNamePrefix 04_aligned/{wildcards.file_names}. \\
         --outSAMtype BAM Unsorted \\
         --outFilterMultimapNmax 4 \\
         --outFilterType BySJout \\
@@ -107,15 +99,15 @@ rule star_align:
         --alignIntronMax 1000000 \\
         --genomeLoad LoadAndKeep --limitBAMsortRAM 322122382273  \\
         --runThreadN {threads} \\
-        > 05_aligned/{wildcards.file_names}.std_out.txt
-        2> 05_aligned/{wildcards.file_names}.std_err.txt
+        > 04_aligned/{wildcards.file_names}.std_out.txt
+        2> 04_aligned/{wildcards.file_names}.std_err.txt
         """
 # already done by trimmomatic
 #        --clip3pAdapterSeq AAAAAAAA --clip3pAdapterMMp 0.1 \\
 
 rule create_field_OL:
-    input: "05_aligned/{file_names}.Aligned.out.bam"
-    output: "05_aligned/{file_names}.fixed_tag.bam"
+    input: "04_aligned/{file_names}.Aligned.out.bam"
+    output: "04_aligned/{file_names}.fixed_tag.bam"
     threads: 1
     shell:
         """
@@ -126,8 +118,8 @@ rule create_field_OL:
         """
 
 rule sort_query:
-    input: "05_aligned/{file_names}.fixed_tag.bam"
-    output: "06_sorted/{file_names}.bam"
+    input: "04_aligned/{file_names}.fixed_tag.bam"
+    output: "05_sorted/{file_names}.bam"
     threads: 5
     shell:
         """
@@ -135,13 +127,13 @@ rule sort_query:
         I={input} \\
         O={output} \\
         SORT_ORDER=queryname \\
-        > 06_sorted/{wildcards.file_names}.sort.std_out.txt \\
-        2> 06_sorted/{wildcards.file_names}.sort.std_err.txt
+        > 05_sorted/{wildcards.file_names}.sort.std_out.txt \\
+        2> 05_sorted/{wildcards.file_names}.sort.std_err.txt
         """
 
 rule deduplicate:
-    input: "06_sorted/{file_names}.bam"
-    output: "07_deduplicated/{file_names}.deduplicated.bam"
+    input: "05_sorted/{file_names}.bam"
+    output: "06_deduplicated/{file_names}.deduplicated.bam"
     threads: 5
     shell:
         """
@@ -157,16 +149,16 @@ rule deduplicate:
         SORTING_COLLECTION_SIZE_RATIO=.8 \\
         MAX_FILE_HANDLES=1000 \\
         METRICS_FILE={output}.metrics \\
-        > 07_deduplicated/{wildcards.file_names}.markdup.std_out.txt \\
-        2> 07_deduplicated/{wildcards.file_names}.markdup.std_err.txt
+        > 06_deduplicated/{wildcards.file_names}.markdup.std_out.txt \\
+        2> 06_deduplicated/{wildcards.file_names}.markdup.std_err.txt
         """
 
 rule feature_counts:
-    input: "07_deduplicated/{file_names}.deduplicated.bam"
-    output: "08_feature_count/{file_names}.deduplicated.bam.featureCounts.bam"
+    input: "06_deduplicated/{file_names}.deduplicated.bam"
+    output: "07_feature_count/{file_names}.deduplicated.bam.featureCounts.bam"
     threads: 15
     params:
-        gtfFile="/home/shared/hg_align_db/GRCh38_gencode_primary/gencode.v38.primary_assembly.annotation.ercc.phix.gtf"
+        gtfFile=config['gtfFile']
     shell:
         """
         featureCounts \\
@@ -191,39 +183,42 @@ rule feature_counts:
 # -M multi-mapping reads will counted. Uses NH tag for multimappers.
 # -O assign reads to all overlaping features
 # --fraction Assign fractional counts to features
+
 rule bam_sort:
-    input: "08_feature_count/{file_names}.deduplicated.bam.featureCounts.bam"
-    output: "09_sort_index/{file_names}.sort.bam"
+    input: "07_feature_count/{file_names}.deduplicated.bam.featureCounts.bam"
+    output: "08_sort_index/{file_names}.sort.bam"
     shell:
         """
         samtools sort \\
         {input} \\
         -o {output}
-        > 09_sort_index/{wildcards.file_names}.sort.std_out.txt \\
-        2> 09_sort_index/{wildcards.file_names}.sort.std_err.txt
+        > 08_sort_index/{wildcards.file_names}.sort.std_out.txt \\
+        2> 08_sort_index/{wildcards.file_names}.sort.std_err.txt
         """
 
 rule bam_index:
-    input: "09_sort_index/{file_names}.sort.bam"
-    output: "09_sort_index/{file_names}.sort.bam.bai"
+    input: "08_sort_index/{file_names}.sort.bam"
+    output: "08_sort_index/{file_names}.sort.bam.bai"
     shell:
         """
         samtools index \\
         {input} \\
-        > 09_sort_index/{wildcards.file_names}.index.std_out.txt \\
-        2> 09_sort_index/{wildcards.file_names}.index.std_err.txt
+        > 08_sort_index/{wildcards.file_names}.index.std_out.txt \\
+        2> 08_sort_index/{wildcards.file_names}.index.std_err.txt
         """
 
 rule genebody_cov:
     input: 
-        real="09_sort_index/{file_names}.sort.bam",
-        dummy="09_sort_index/{file_names}.sort.bam.bai"
-    output: "09_sort_index/{file_names}.geneBodyCoverage.curves.pdf"
+        real="08_sort_index/{file_names}.sort.bam",
+        dummy="08_sort_index/{file_names}.sort.bam.bai"
+    output: "08_sort_index/{file_names}.geneBodyCoverage.curves.pdf"
+    params:
+        bedFile=config['bedFile']
     shell:
         """
         geneBody_coverage.py \\
         -i {input.real} \\
-        -r ~/@patrick/parsebio/hg38_GENCODE.v38.10000.bed \\
+        -r {params.bedFile} \\
         -o 11_sort_index/{wildcards.file_names} \\
         -f pdf
         """
@@ -232,7 +227,7 @@ rule multiqc:
     input: 
         inDir=".",
 #        bodycov=expand("09_sort_index/{file_names}.sort.bam.bai", file_names=sample),
-        extra=expand("09_sort_index/{file_names}.geneBodyCoverage.curves.pdf", file_names=sample)
+        extra=expand("08_sort_index/{file_names}.geneBodyCoverage.curves.pdf", file_names=sample)
 #         dummy=expand("08_feature_count/{file_names}.deduplicated.bam.featureCounts.bam", file_names=sample)
     output:
         outFile="09_multiqc/multiqc_report.html"
