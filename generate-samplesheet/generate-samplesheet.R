@@ -1,8 +1,8 @@
 # goal: automate production of sample shwet for sequencing and demultiplexing with minimal user input
 
 # input:
-# 1. csv of sample name, sample barcode plate, and sample barcode well
-# 2. lexogen barcode sheet DONE 
+# 1. sample-associated-barcode.csv - csv of sample name, sample barcode plate, and sample barcode well
+# 2. DONE - lexogen barcode sheet 
 
 # output: 
 # 1. Sample sheet with following columns:
@@ -14,12 +14,11 @@ WD = '~/@patrick/SF11949_SF11055_run/00_raw_seq_data'
 ########################
 
 library('xlsx')
-setwd('~/code/git/workflows')
 barcodes = lapply(seq(1,5), function(i) 
-    {read.xlsx('~/code/git/workflows/lexogen_barcodes/107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
+    {read.xlsx('~/code/pschupp/Lexogen-RNA-seq-pipeline/lexogen-barcodes/107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
 )
 names(barcodes)=c(paste0('Set_A', seq(1,4)), 'Set_B1')
-input=read.csv(paste0(WD, '/samples_associated_barcodes.csv'))
+input=read.csv(paste0(WD, '/sample-associated-barcodes.csv'))
 outA = lapply(unique(input$index_plate), function(plate) {
     inputT = input[which(input$index_plate == plate),]
     barcI = grep(plate, names(barcodes))
