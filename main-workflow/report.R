@@ -87,14 +87,18 @@ library('RUVSeq')
 genes=out[,c(1,2,3)]
 expr=RUVg(round(as.matrix(out[,-c(1,2,3)])), which(out$Gene %in% c('HSPB1', 'PPDPF', 'RAB13')), k=3)
 expr=data.frame(genes, expr$normalizedCounts)
+test_cor(expr)
+
 write.csv(expr, 'counts_ruvg_all_features.csv', row.names=F, quote=F)
 zeros=apply(expr[,-c(1,2)], 1, function(x) length(which(x==0)))
 expr=expr[(which(zeros<6)),]
 expr=expr[!is.na(expr$Gene),]
 expr=aggregate(expr[,-c(1,2,3)], by=list(expr$Gene), FUN=sum)
 expr=data.frame(Gene=expr[,1], genes[match(expr[,1], genes$Gene), c(2,3)], expr[,-1])
+test_cor(expr)
 write.csv(expr, 'counts_ruvg_expressed_features.csv', row.names=F, quote=F)
 expr=expr[expr$type=='protein_coding',]
+test_cor(expr)
 write.csv(expr, 'counts_ruvg_protein_coding.csv', row.names=F, quote=F)
 expr[,-c(1,2,3)]=normalizeQuantiles(expr[,-c(1,2,3,4,5,6)])
 expr[,-c(1,2,3)]=log2(expr[,-c(1,2,3,4,5,6)]+1)
@@ -104,10 +108,13 @@ m1=apply(expr[,-c(1,2,3,4,5,6)], 1, function(x) lm(x ~ exprPC$x[,1]+exprPC$x[,2]
 m2=t(data.frame(lapply(m1, function(x) resid(x))))
 rownames(m2)=seq(1,nrow(m2))
 m2=data.frame(expr[,c(1,2,3)], m2)
+test_cor(m2)
+
 m1=apply(expr[,-c(1,2,3,4,5,6)], 1, function(x) lm(x ~ exprPC$x[,1]+exprPC$x[,2]))
 m2=t(data.frame(lapply(m1, function(x) resid(x))))
 rownames(m2)=seq(1,nrow(m2))
 m2=data.frame(expr[,c(1,2,3)], m2)
+test(cor_m2)
 setwd('/home/patrick/opentrons_testing_run/06_expression_matrix')
 pdf('cors.pdf')
 expr=read.csv('counts_ruvg_protein_coding.csv')
@@ -123,6 +130,7 @@ m1=apply(expr[,-c(1,2,3,4,5,6)], 1, function(x) lm(x ~ exprPC$x[,1]))
 m2=t(data.frame(lapply(m1, function(x) resid(x))))
 rownames(m2)=seq(1,nrow(m2))
 m2=data.frame(expr[,c(1,2,3)], m2)
+test_cor(m2)
 hist(unlist(as.numeric(cor(t(m2[sample(seq(1,nrow(m2)), 10000),-c(1,2,3)])))))
 dev.off()
 
@@ -248,3 +256,24 @@ FindModules(
  calcBigModStat=FALSE,
  writeModSnap=TRUE
 )
+
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='~/@patrick/opentrons_seq/nov_2021_run/06_expression_analysis/opentrons_modules_k=1_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='slim_sets_fdr')
+MyGSHGloop(kmecut1='bc',exclude="none",pvalcut1=NULL, moduleDir='~/@patrick/opentrons_seq/nov_2021_run/06_expression_analysis/opentrons_modules_k=1_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='slim_sets_bc')
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='~/@patrick/opentrons_seq/nov_2021_run/06_expression_analysis/opentrons_modules_k=1_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='broad_fdr')
+MyGSHGloop(kmecut1='bc',exclude="none",pvalcut1=NULL, moduleDir='~/@patrick/opentrons_seq/nov_2021_run/06_expression_analysis/opentrons_modules_k=1_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='broad_bc')
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='/home/patrick/opentrons_testing_run/07_sample_networks/ruvg_protein_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='ruvg_protein')
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='/home/patrick/opentrons_testing_run/07_sample_networks/ruvg_prot_qn_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='ruvg_prot_qn')
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='/home/patrick/opentrons_testing_run/07_sample_networks/ruvg_all_pc1_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='ruvg_prot_all_pc1')
+
+source('~/code/git/GSEA/GSEAfxsV3.r')
+MyGSHGloop(kmecut1='fdr',exclude="none",pvalcut1=NULL, moduleDir='/home/patrick/opentrons_testing_run/07_sample_networks/ruvg_all_Modules', geneSets='/home/patrick/code/GSEA/genesets_slim', outputName='ruvg_all')

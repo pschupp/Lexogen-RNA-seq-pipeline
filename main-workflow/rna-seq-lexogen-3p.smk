@@ -14,12 +14,30 @@ rule bcl_2_fastq:
     output:"00_raw_seq_data/00_basecalling.log.txt"
     shell:
         """
-        /opt/illumina/bcl2fastq/bin/bcl2fastq --runfolder=00_raw_seq_data --output-dir=01_basecalled --sample-sheet=00_raw_seq_data/SampleSheet.csv --minimum-trimmed-read-length=30 --with-failed-reads --barcode-mismatches=1 --no-lane-splitting --loading-threads=5 --processing-threads=15 --writing-threads=5 2> 00_raw_seq_data/00_basecalling.log.txt;
+        /opt/illumina/bcl2fastq/bin/bcl2fastq \\
+        --runfolder=00_raw_seq_data \\
+        --output-dir=01_basecalled \\
+        --sample-sheet=00_raw_seq_data/SampleSheet.csv \\
+        --minimum-trimmed-read-length=30 \\
+        --with-failed-reads \\
+        --barcode-mismatches=1 \\
+        --no-lane-splitting 
+        --loading-threads=5 \\
+        --processing-threads=15 \\
+        --writing-threads=5 \\
+        2> 00_raw_seq_data/00_basecalling.log.txt;
         mv 01_basecalled/sf*/*fastq.gz 01_basecalled;
         mkdir 01_basecalled/Undetermined;
         mv 01_basecalled/Undetermined*fastq.gz 01_basecalled/Undetermined;
         rename 's/_S[0-9]+//' 01_basecalled/*fastq.gz
         """
+# --minimum-trimmed-read-length arg (=35)         minimum read length after adapter trimming
+# --with-failed-reads                             include non-PF clusters
+# --no-lane-splitting                             do not split fastq files by lane.
+# --barcode-mismatches arg (=1)                   number of allowed mismatches per index. Multiple, comma delimited, entries allowed. Each entry is applied to the corresponding index; last entry applies to all remaining indices. Accepted values: 0, 1, 2.
+# --loading-threads Number of threads to load BCL data
+# --processing-threads Number of threads to process demultiplexing data.
+# --writing-threads Number of threads to write FASTQ data. This number must be lower than number of samples.
 
 rule umi_tools:
     input:"00_raw_seq_data/00_basecalling.log.txt"
