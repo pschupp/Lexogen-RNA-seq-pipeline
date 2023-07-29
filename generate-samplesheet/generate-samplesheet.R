@@ -10,25 +10,27 @@
 # 2. Optional: full sample sheet with appropriate header, etc., but this is fairly trivial and be a later TODO
 ########################
 # USER DEFINED PORTION HERE, MUST NAME FILE "samples_associated_barcodes.csv"
-WD = '~/@patrick/SF11949_SF11055_run/00_raw_seq_data'
+WD = '.'
 ########################
 
 library('xlsx')
 barcodes = lapply(seq(1,5), function(i) 
-    {read.xlsx('~/code/pschupp/Lexogen-RNA-seq-pipeline/lexogen-barcodes/107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
+    {read.xlsx('107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
 )
 names(barcodes)=c(paste0('Set_A', seq(1,4)), 'Set_B1')
 input=read.csv(paste0(WD, '/sample-associated-barcodes.csv'))
-outA = lapply(unique(input$index_plate), function(plate) {
-    inputT = input[which(input$index_plate == plate),]
+outA = lapply(seq_along(input$Sample_Plate), function(i) {
+    inputT = input[i,]
+    plate=input$Sample_Plate[i]
     barcI = grep(plate, names(barcodes))
     joinedBarc=gsub(' ' , '', apply(barcodes[[barcI]][,c(1,2)], 1, function(x) paste0(x[1], x[2])))
-    out=cbind(inputT[,1], inputT, 
-        barcodes[[barcI]][match(inputT$index_well,  joinedBarc),-seq(1,3)], 
-        gsub('(.*)_.*', '\\1', inputT$name), 
-        gsub('(.*)_.*', '\\1', inputT$name))
+    out=cbind(i, inputT, 
+        barcodes[[barcI]][match(inputT$Sample_Well,  joinedBarc),-seq(1,3)], 
+        gsub('(.*)_.*', '\\1', inputT$Sample_Name), 
+        gsub('(.*)_.*', '\\1', inputT$Sample_Name))
     colnames(out) = c('Sample_ID','Sample_Name','Sample_Plate','Sample_Well','I7_Index_ID','index','I5_Index_ID','index2','Sample_Project','Description')
     return(out)
 })
 outA = do.call(rbind, outA)
-write.csv(outA, file=paste0(WD, '/sample_sheet_bottom.csv'), row.names=F, quote=F)
+system('cp sample_top.txt new_sample_sheet.txt')
+lapply(seq_len(nrow(outA)), function(x) write(paste0(outA[x,], collapse=','), file='new_sample_sheet.txt', append = TRUE))
