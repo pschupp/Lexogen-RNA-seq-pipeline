@@ -1,11 +1,61 @@
+# start with expectation that input is folder from sequencing machine in the form:
+# [YY][MM][DD]_M00179_0434_000000000-DL3KG
+# {{{ expalanation of useful files in the run folder
+# RTA Logs folder - Contains log files that describe each step performed by RTA (real-time analysis) for each read
+# InterOp folder - Contains binary files used by Sequencing Analysis Viewer (SAV) to summarize various primary analysis metric such as cluster density, intensities, quality scores, and overall run quality
+# Logs folder - Contains log files that describe eavery step performed by the intrument for each cycle
+# RunInfo.xml - Contains high-level run information, such as the number of reads and cycles in the sequencing run.
+# runParameters.xml - Contains a summary of run parameters and information about run components sucah as the RFID of the flow cell and reagents associated with the run.
+# SampleSheet.csv - Provides parameters for teh run and subsequent analysis.
+# Images and Thumbnail_Images folders - Contains focus images and thumbnail images. 
+# }}}
+
 threads = workflow.cores
 import os
 import numpy
 import pandas
 import re
+import math
 cwd = os.getcwd()
-sample=pandas.read_table('00_raw_seq_data/SampleSheet.csv', header=None, sep=',')
-sample=sample[0][(int(numpy.where(sample[0]=='Sample_ID')[0])+1):]
+
+folder = ''.join([fol for fol in os.listdir() if re.search('^[0-9]{6}_.*', fol)])
+
+# find when '[Data]' begins
+i=0
+with open(folder + '/SampleSheet.csv', 'r') as f:
+    for line in f:
+        if 'Data' in line:
+            inLine = i + 1
+            break
+        i=i+1
+
+# read in the sample table under '[Data]'
+sample=pandas.read_table(folder + '/SampleSheet.csv', header=0, skiprows=inLine, sep=',', dtype = 'str')
+
+# open file until '[Data]' and keep this header
+with open(folder + '/SampleSheet.csv', 'r') as f:
+    i=0
+    lines = []
+    for line in f:
+        i = i + 1
+        lines.append(line)
+        if i == inLine + 0:
+            break
+
+# write only header to file
+with open(folder + '/SampleSheet.csv', 'w') as f:
+    for line in lines:
+        _ = f.write(line)
+
+# determine which names need to be replaced
+replaceIndeces = [str(x) == 'nan' for x in sample['Sample_Name']]
+# create names for unnamed librararies
+sample.loc[replaceIndeces,'Sample_Name'] = ['unamed-sublibrary-'+str(i) for i in numpy.where(replaceIndeces)[0]]
+# write out new sample table with names
+sample.to_csv(path_or_buf = folder + '/SampleSheet.csv', sep = ',', header = True, index = False, mode = 'a') 
+# create sample names and file names (with read 1/2 label)
+sampleN = sample['Sample_Name'] + '_S' + sample['Sample_ID']
+
 rule all:
     input: 
         "09_multiqc/multiqc_report.html"
@@ -93,7 +143,7 @@ rule fastqc_post:
 rule star_align:
     input: 
         dummy="03_posttrim_fastqc/{file_names}.std_out.txt",
-        files="03_trimmed/{file_names}.trimmed.fastq"
+        files="02_trimmed/{file_names}.trimmed.fastq"
     output: "04_aligned/{file_names}.Aligned.out.bam"
     threads: 15
     params:
@@ -244,9 +294,7 @@ rule genebody_cov:
 rule multiqc:
     input: 
         inDir=".",
-#        bodycov=expand("09_sort_index/{file_names}.sort.bam.bai", file_names=sample),
-        extra=expand("08_sort_index/{file_names}.geneBodyCoverage.curves.pdf", file_names=sample)
-#         dummy=expand("08_feature_count/{file_names}.deduplicated.bam.featureCounts.bam", file_names=sample)
+        extra=expand("08_sort_index/{file_names}.geneBodyCoverage.curves.pdf", file_names=sampleN)
     output:
         outFile="09_multiqc/multiqc_report.html"
     shell:
