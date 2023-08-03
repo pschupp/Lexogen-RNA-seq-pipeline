@@ -54,32 +54,33 @@ sample.loc[replaceIndeces,'Sample_Name'] = ['unamed-sublibrary-'+str(i) for i in
 # write out new sample table with names
 sample.to_csv(path_or_buf = folder + '/SampleSheet.csv', sep = ',', header = True, index = False, mode = 'a') 
 # create sample names and file names (with read 1/2 label)
-sampleN = sample['Sample_Name'] + '_S' + sample['Sample_ID']
+x= list(range(0,sample.shape[0]))
+sampleN = []
+for i in x: 
+    sampleN.append(str(sample['Sample_Name'][i]) + '_S' + str((sample.index.to_frame()+1)[0][i])+ '_R1_001')
 
 rule all:
     input: 
         "09_multiqc/multiqc_report.html"
             
 rule bcl_2_fastq:
-    output:"00_raw_seq_data/00_basecalling.log.txt"
+    output:"01_basecalled/basecalling.log.txt"
+    params: runfolder = folder
     shell:
         """
         /opt/illumina/bcl2fastq/bin/bcl2fastq \\
-        --runfolder=00_raw_seq_data \\
+        --runfolder={params.runfolder} \\
         --output-dir=01_basecalled \\
-        --sample-sheet=00_raw_seq_data/SampleSheet.csv \\
+        --sample-sheet={params.runfolder}/SampleSheet.csv \\
         --minimum-trimmed-read-length=30 \\
         --with-failed-reads \\
         --barcode-mismatches=1 \\
-        --no-lane-splitting 
+        --no-lane-splitting \\
         --loading-threads=5 \\
         --processing-threads=15 \\
         --writing-threads=5 \\
-        2> 00_raw_seq_data/00_basecalling.log.txt;
-        mv 01_basecalled/sf*/*fastq.gz 01_basecalled;
-        mkdir 01_basecalled/Undetermined;
-        mv 01_basecalled/Undetermined*fastq.gz 01_basecalled/Undetermined;
-        rename 's/_S[0-9]+//' 01_basecalled/*fastq.gz
+        2> basecalling.log.txt;
+        mv basecalling.log.txt 01_basecalled
         """
 # --minimum-trimmed-read-length arg (=35)         minimum read length after adapter trimming
 # --with-failed-reads                             include non-PF clusters
@@ -90,7 +91,7 @@ rule bcl_2_fastq:
 # --writing-threads Number of threads to write FASTQ data. This number must be lower than number of samples.
 
 rule umi_tools:
-    input:"00_raw_seq_data/00_basecalling.log.txt"
+    input: "01_basecalled/basecalling.log.txt",
     output:"01_basecalled/{file_names}.umi.fastq.gz"
     log:"01_basecalled/{file_names}.log.txt"
     threads: 1
@@ -100,7 +101,7 @@ rule umi_tools:
         --extract-method=string \\
         --bc-pattern=NNNNNN \\
         -L {log} \\
-        --stdin {input} \\
+        --stdin 01_basecalled/{wildcards.file_names}.fastq.gz \\
         --stdout {output}
         """
 
