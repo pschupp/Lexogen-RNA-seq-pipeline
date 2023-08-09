@@ -151,7 +151,7 @@ rule star_align:
         genomeDir=config['genomeDir']
     shell:
         """
-        /opt/STAR_old/STAR-2.6.1e/bin/Linux_x86_64/STAR --genomeDir config['genomeDir'] \\
+        /opt/STAR_old/STAR-2.6.1e/bin/Linux_x86_64/STAR --genomeDir {params.genomeDir} \\
         --readFilesIn {input.files} --readFilesCommand cat \\
         --outFileNamePrefix 04_aligned/{wildcards.file_names}. \\
         --outSAMtype BAM Unsorted \\
@@ -233,15 +233,15 @@ rule feature_counts:
         featureCounts \\
         {input} \\
         -a {params.gtfFile} \\
-        -o 08_feature_count/{wildcards.file_names}.count_matrix.tsv \\
+        -o 07_feature_count/{wildcards.file_names}.count_matrix.tsv \\
         -R BAM \\
         -g gene_id \\
         -M -O \\
         -t gene \\
         --fraction \\
         -T {threads} \\
-        > 08_feature_count/{wildcards.file_names}.std_out.txt \\
-        2> 08_feature_count/{wildcards.file_names}.std_err.txt
+        > 07_feature_count/{wildcards.file_names}.std_out.txt \\
+        2> 07_feature_count/{wildcards.file_names}.std_err.txt
         """
 # options:
 # -a gtf file input
