@@ -32,7 +32,7 @@ The order of sequencing is always:
 2. index read preparation
 3. Index 1 Read (i7)
 4. Index 2 Read (i5)
-5. plus Read 2 Resynthesis
-6. and Read 2 for paired-end flow cells / runs (except for sequencing above where i5 read comes after resynthesis)
+5. Read 2 Resynthesis
+6. Read 2 for paired-end flow cells / runs (except for sequencing above where i5 read comes after resynthesis)
 ```
 - Stylized as: R1 x i7 x i5 x R2
