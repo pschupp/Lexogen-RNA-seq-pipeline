@@ -1,4 +1,4 @@
 genomeDir: "/home/shared/hg_align_db/GRCh38_gencode_primary/star_index_ercc_phix"
 gtfFile: "/home/shared/hg_align_db/GRCh38_gencode_primary/gencode.v38.primary_assembly.annotation.ercc.phix.gtf"
-bedFile: "~/@patrick/parsebio/hg38_GENCODE.v38.10000.bed"
+bedFile: "/home/shared/hg_align_db/hg38_GENCODE.v38.10000.bed"
 geneSets: "/home/shared/genesets/fidelity_cell_types/hifi100" 

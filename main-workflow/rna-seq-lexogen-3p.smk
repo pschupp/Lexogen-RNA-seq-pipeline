@@ -288,7 +288,7 @@ rule genebody_cov:
         geneBody_coverage.py \\
         -i {input.real} \\
         -r {params.bedFile} \\
-        -o 11_sort_index/{wildcards.file_names} \\
+        -o 08_sort_index/{wildcards.file_names} \\
         -f pdf
         """
 
@@ -301,6 +301,6 @@ rule multiqc:
     shell:
         """
         multiqc {input.inDir} \\
-        -o 09_multiqc; \\
-        multiqc 02_pretrim_fastqc -o 02_pretrim_fastqc
+        -o 09_multiqc
+#        multiqc 03_trim_fastqc -o 03_pretrim_fastqc
         """
