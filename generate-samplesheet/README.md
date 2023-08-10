@@ -24,7 +24,7 @@ optional arguments:
 
 # Output
 
-The new samplesheet is automatically named in the format of `samplesheet_[experiment]_[date].csv`.
+The new Sample Sheet is named in the format of `samplesheet_[experiment]_[date].csv`.
 
 # Sample barcoding input file
 
