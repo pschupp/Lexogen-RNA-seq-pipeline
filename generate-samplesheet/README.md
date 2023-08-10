@@ -17,7 +17,7 @@ optional arguments:
   --rc             reverse complement the i5 barcode, default is 'FALSE'
   --investigator   name of the investigator, default is: 'anonymous'
   --experiment     experiment name, default is: 'UCSF experiment'
-  --date           date of the run, default is today: '08/10/2023'
+  --date           date of the run, default is today: 'MM/DD/YYYY'
   --read1          length of read 1, default is: '66'
   --read2          length of read 2, default is: '0'
   --i7r            length of the first index read, i7, default is: '6'
