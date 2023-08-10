@@ -6,7 +6,7 @@ usage: ./generate-samplesheet.R [-h] [--rc] [--samplebarcs] [--workingdir]
                                 [--read1] [--read2] [--i7r] [--i5r]
 
 Generate Sample Sheets for sequencing of Lexogen FWD 3' Libraries. Supports
-both basic i5/i7 6nt indexing and the UDIs.
+both basic i5/i7 6 nt indexing and the UDIs.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -29,16 +29,16 @@ The new Sample Sheet is named in the format of `samplesheet_[experiment]_[date].
 # Sample barcoding input file
 
 The most important input is the sample barcoding file, which should formated according to the type of Lexogen barcode used.
-## 12nt UDI
+## 12 nt UDI
 
 ```
 Sample_Name,Sample_Plate,Sample_Well
 sample1,Set_A1,A1
 sample2,Set_A3,A2
 ```
-*n.b.* not all 12 nucleotides of the barcodes need to be used. The length of the barcodes to be sequenced can be modified using the `i7r` and `i5r` flags. 
+*n.b.* not all 12 nucleotides of the barcodes need to be used. The length of the barcodes to be sequenced can be modified using the `i7r` and `i5r` flags. Lexogen advises shortening to either 8 or 10 nt.
 
-## 6nt barcodes
+## 6 nt barcodes
 
 ```
 Sample_Name,Sample_Well_i7,Sample_Well_i5
@@ -46,4 +46,4 @@ sample1,A1,B1
 sample2,A1,B2
 ```
 
-*n.b.* if only using the i7 barcode and not the i5 (or vice versa) barcodes can be excluded from the final Sample Sheet by setting either the `i5r` or `i7r` flags to 0.
+*n.b.* if only using the i7 barcode and not the i5 barcode (or vice versa), barcodes can be excluded from the final Sample Sheet by setting either the `i5r` or `i7r` flags to 0.
