@@ -1,0 +1,18 @@
+[Header]
+FileFormatVersion,2
+Investigator Name,anonymous
+RunName,UCSF experiment
+Date,08/10/2023
+InstrumentPlatform,NextSeq1k2k
+InstrumentType,NextSeq2000
+
+[Reads]
+Read1Cycles,66
+Read2Cycles,0
+Index1Cycles,6
+Index2Cycles,0
+
+[BCLConvert_Data]
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,I5_Index_ID,index2
+1,sample1,Set_A1,F4,i712_0030,ACAGGACTCTGG,i512A_0030,CACGGCATATGG
+2,sample2,Set_A1,F5,i712_0038,ATGGGCTAGACA,i512A_0038,CTGGGATCGCAC

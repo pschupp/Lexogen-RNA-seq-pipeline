@@ -1,0 +1,14 @@
+[Header]
+FileFormatVersion,2
+RunName,UCSF experiment
+InstrumentPlatform,NextSeq1k2k
+InstrumentType,NextSeq2000
+
+[Reads]
+Read1Cycles,
+Read2Cycles,
+Index1Cycles,6
+Index2Cycles,0
+[BCLConvert_Data]
+Sample_ID,Sample_Name,index,index2
+out
