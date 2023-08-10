@@ -17,11 +17,6 @@ parser$add_argument('--samplebarcs', '-s',
                     metavar = '',
                     help="location of csv containing columns: sample name, sample barcode plate, sample barcode well")
 
-parser$add_argument('--workingdir', '-w',
-                    type='character',
-                    metavar = '',
-                    help="current working directory")
-
 parser$add_argument('--investigator', '-i',
                     type='character',
                     default = 'anonymous',
@@ -70,7 +65,6 @@ if(any(noArgs)){
 }
 
 # reassign arguments to more intuitive variable names
-WD = args$working_dir
 i7Cycles = args$i7r
 i5Cycles = args$i5r
 sampleSheet = read.csv(args$samplebarcs)
