@@ -28,7 +28,7 @@ The new samplesheet is automatically named in the format of `samplesheet_[experi
 
 # Sample barcoding input file
 
-The most important input is th sample barcoding file. 
+The most important input is the sample barcoding file, which should formated according to the type of Lexogen barcode used.
 ## 12nt UDI
 
 ```
