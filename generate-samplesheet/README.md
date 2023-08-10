@@ -22,6 +22,10 @@ optional arguments:
   --i5r , -x            length of the second index read, i5
 ```
 
+# Output
+
+The new samplesheet is automatically named in the format of `samplesheet_[experiment]_[date].csv`.
+
 # Sample barcoding input file
 
 The most important input is th sample barcoding file. 
