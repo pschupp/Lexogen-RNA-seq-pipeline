@@ -6,56 +6,58 @@ suppressPackageStartupMessages(library('xlsx'))
 # take arguments from command line
 parser = ArgumentParser(description = "Generate Sample Sheets for sequencing of Lexogen FWD 3' Libraries. Supports both basic i5/i7 6nt indexing and the UDIs.")
 
-parser$add_argument('--rc', '-c', 
+parser$add_argument('samplebarcs',
+                    type='character',
+                    metavar = 'samplebarcs',
+                    help="location of the csv file matching sample names to barcode plates and wells")
+
+parser$add_argument('--rc',
                     type='logical',
                     default = 'FALSE',
                     metavar = '',
-                    help="reverse complement the i5 barcode")
+                    help="reverse complement the i5 barcode, default is '%(default)s'")
 
-parser$add_argument('--samplebarcs', '-s',
-                    type='character',
-                    metavar = '',
-                    help="location of csv containing columns: sample name, sample barcode plate, sample barcode well")
-
-parser$add_argument('--investigator', '-i',
+parser$add_argument('--investigator',
                     type='character',
                     default = 'anonymous',
                     metavar = '',
                     help="name of the investigator, default is: '%(default)s'")
 
-parser$add_argument('--experiment', '-e',
+parser$add_argument('--experiment',
                     type='character',
                     default = 'UCSF experiment',
                     metavar = '',
                     help="experiment name, default is: '%(default)s'")
 
-parser$add_argument('--date', '-d',
+parser$add_argument('--date',
                     type='character',
                     default = format(Sys.time(), "%x"),
                     metavar = '',
                     help="date of the run, default is today: '%(default)s'")
 
-parser$add_argument('--read1', '-r',
+parser$add_argument('--read1',
                     type = 'integer',
                     default = 66,
                     metavar = '',
                     help="length of read 1, default is: '%(default)s'")
 
-parser$add_argument('--read2', '-u',
+parser$add_argument('--read2',
                     type = 'integer',
                     default = 0,
                     metavar = '',
                     help="length of read 2, default is: '%(default)s'")
 
-parser$add_argument('--i7r', '-v',
+parser$add_argument('--i7r',
                     type = 'integer',
                     metavar = '',
-                    help = "length of the first index read, i7")
+                    default = 6,
+                    help = "length of the first index read, i7, default is: '%(default)s'")
 
-parser$add_argument('--i5r', '-x',
+parser$add_argument('--i5r',
                     type = 'integer',
                     metavar = '',
-                    help = "length of the second index read, i5")
+                    default = 6,
+                    help = "length of the second index read, i5, default is: '%(default)s'")
 
 # process arguments and raise error if there are any with no values
 args = parser$parse_args()
