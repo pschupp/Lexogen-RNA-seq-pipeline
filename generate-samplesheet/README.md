@@ -42,4 +42,4 @@ sample1,A1,B1
 sample2,A1,B2
 ```
 
-*n.b.* if only using the i7 barcode and not the i5 (or vice versa) barcodes can be excluded from the final Sample Sheet by setting either the `i5` or `i7` flags to 0.
+*n.b.* if only using the i7 barcode and not the i5 (or vice versa) barcodes can be excluded from the final Sample Sheet by setting either the `i5r` or `i7r` flags to 0.
