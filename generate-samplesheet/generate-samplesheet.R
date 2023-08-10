@@ -1,3 +1,6 @@
+#!/usr/bin/env Rscript
+suppressPackageStartupMessages(library("argparse"))
+
 # goal: automate production of sample shwet for sequencing and demultiplexing with minimal user input
 
 # input:
@@ -9,13 +12,20 @@
 #       Sample_ID	Sample_Name	Sample_Plate	Sample_Well	I7_Index_ID	index	I5_Index_ID	index2	Sample_Project	Description
 # 2. Optional: full sample sheet with appropriate header, etc., but this is fairly trivial and be a later TODO
 ########################
-# USER DEFINED PORTION HERE, MUST NAME FILE "samples_associated_barcodes.csv"
-WD = '.'
+parser <- ArgumentParser(description="Generate Sample Sheets for sequencing of Lexogen FWD 3' Libraries. Supports both basic i5/i7 6nt indexing and the UDIs.")
+parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
+parser$add_argument("--working-dir", type='character',  help="current working directory")
+parser$add_argument("--mean", default=0, type="double", help="Mean if generator == \"rnorm\" [default %(default)s]")
+args <- parser$parse_args()
+print(args)
+print('wd here')
+WD <- args$working_dir
+print(WD)
 ########################
 
 library('xlsx')
 barcodes = lapply(seq(1,5), function(i) 
-    {read.xlsx('107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
+    {read.xlsx('../lexogen-barcodes/107UI264V0104_UDI-12-nt-Index-Sequences-for-Illumina_2021-03-26.xlsx', sheetIndex=i)[1:96,seq(1,7)]}
 )
 names(barcodes)=c(paste0('Set_A', seq(1,4)), 'Set_B1')
 input=read.csv(paste0(WD, '/sample-associated-barcodes.csv'))
