@@ -1,16 +1,8 @@
 # Introduction
+This repository deals with ["QuantSeq 3’ mRNA-Seq Library Prep Kit FWD"](https://www.lexogen.com/quantseq-3mrna-sequencing/).
 
-Each ```snakemake``` script can be run the usual way with Snakemake in its own virtual environment via:
-```{bash}
-# for dry run
-#   -n : dry run
-#   -r : reason for each excecuted rule
-#   -s : snakemake file
-snakemake -n -r -s [name of file.smk] 
-# create DAG diagram
-snakemake --dag -s [name of file.smk]| dot -Tsvg > dag.svg
-# create DAG diagram
-snakemake --rulegraph -s [name of file.smk]| dot -Tsvg > rules.svg
-# for real run
-snakemake --cores 15 -s [name of file.smk]
-```
+After generating your libraries you can proceed to:
+
+1. Generating the Sample Sheet in the `generate-samplesheet` folder. For advice on barcode type selection see the folder `lexogen-barcodes` which lists the two barcode types used by Lexogen.
+2. After sequencing run the main workflow which goes from raw bcl files to expression matrices.
+3. (Optional) For saturation curve analysis, see the folder `saturation-curve-workflow`.
