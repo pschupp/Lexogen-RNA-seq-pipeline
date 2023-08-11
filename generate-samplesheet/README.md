@@ -24,6 +24,12 @@ optional arguments:
   --i5r            length of the second index read, i5, default is: '6'
 ```
 
+# Dependencies
+
+R packages:
+- `argparse`
+- `xlsx`
+
 # Output
 
 The new Sample Sheet is named in the format of `samplesheet_[experiment]_[date].csv`.

@@ -1,3 +1,5 @@
+# Usage
+
 Each `snakemake` script can be run the usual way with Snakemake in its own virtual environment via:
 
 ```{bash}
@@ -13,3 +15,13 @@ snakemake --rulegraph -s rna-seq-lexogen-3p.smk --configfile human-config.yaml |
 # for real run
 snakemake --cores 15 -s rna-seq-lexogen-3p.smk --configfile human-config.yaml
 ```
+
+# Dependencies
+
+Python packages:
+- `os`
+- `numpy`
+- `pandas`
+- `re`
+- `math`
+
