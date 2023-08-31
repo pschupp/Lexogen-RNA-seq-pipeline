@@ -192,7 +192,7 @@ rule sort_query:
     threads: 5
     shell:
         """
-        PicardCommandLine SortSam \\
+        PicardCommandLine -Xmx100g SortSam \\
         I={input} \\
         O={output} \\
         SORT_ORDER=queryname \\
@@ -206,7 +206,7 @@ rule deduplicate:
     threads: 5
     shell:
         """
-        PicardCommandLine MarkDuplicates \\
+        PicardCommandLine -Xmx200g MarkDuplicates \\
         I={input} \\
         O={output} \\
         TAGGING_POLICY=All \\
